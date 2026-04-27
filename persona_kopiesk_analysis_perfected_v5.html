@@ -1,0 +1,518 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Персона — анализ ЦА, конкурентов, трафика и точек роста</title>
+  <meta name="description" content="Клиентская версия анализа для ресторана Персона: ЦА, конкуренты, ценовое сравнение, трафик, офферы и точки роста." />
+  <style>
+    :root{
+      --bg:#f3f3ef;
+      --bg2:#ecece7;
+      --surface:#ffffff;
+      --surface2:#f7f7f3;
+      --text:#111111;
+      --muted:#666666;
+      --soft:#8e8e8e;
+      --line:rgba(17,17,17,.08);
+      --line2:rgba(17,17,17,.14);
+      --dark:#111111;
+      --dark2:#1a1a1a;
+      --max:1820px;
+      --nav-h:84px;
+      --r-xl:34px;
+      --r-lg:26px;
+      --r-md:18px;
+      --shadow:0 16px 44px rgba(0,0,0,.05);
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color:var(--text);
+      background:linear-gradient(180deg,var(--bg) 0%, var(--bg2) 100%);
+      overflow-x:hidden;
+    }
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background-image:
+        linear-gradient(rgba(17,17,17,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(17,17,17,.03) 1px, transparent 1px);
+      background-size:40px 40px;
+      mask-image:radial-gradient(circle at center, black 60%, transparent 100%);
+      opacity:.55;
+      z-index:-1;
+    }
+    .progress{position:fixed;top:0;left:0;height:3px;width:0;background:#111;z-index:120}
+    .topbar{
+      position:sticky;top:0;z-index:110;
+      backdrop-filter:blur(12px);
+      background:rgba(243,243,239,.84);
+      border-bottom:1px solid var(--line);
+    }
+    .topbar-inner{
+      max-width:var(--max);margin:0 auto;min-height:var(--nav-h);padding:16px 24px;
+      display:grid;grid-template-columns:360px 1fr 240px;gap:20px;align-items:center;
+    }
+    .brand-kicker{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--soft);font-weight:800}
+    .brand-title{font-size:15px;font-weight:800;line-height:1.35;margin-top:4px}
+    .nav{display:flex;gap:8px;overflow:auto;scrollbar-width:none}
+    .nav::-webkit-scrollbar{display:none}
+    .nav a{
+      flex:0 0 auto;text-decoration:none;color:var(--muted);font-size:14px;font-weight:700;
+      padding:12px 14px;border-radius:999px;border:1px solid transparent;transition:.2s ease;white-space:nowrap;
+    }
+    .nav a.active,.nav a:hover{background:#fff;color:#111;border-color:var(--line);box-shadow:0 8px 20px rgba(0,0,0,.04)}
+    .owner-link{justify-self:end;display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:#111;background:#fff;border:1px solid var(--line);border-radius:999px;padding:12px 16px;font-size:14px;font-weight:800;box-shadow:0 10px 22px rgba(0,0,0,.04)}
+    .container{max-width:var(--max);margin:0 auto;padding:0 24px 120px}
+    .section{scroll-margin-top:calc(var(--nav-h) + 24px);padding-top:40px}
+    .hero{padding-top:36px;min-height:calc(100svh - var(--nav-h));display:grid;align-items:center}
+    .grid-12{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px}
+    .col-3{grid-column:span 3}.col-4{grid-column:span 4}.col-5{grid-column:span 5}.col-6{grid-column:span 6}.col-7{grid-column:span 7}.col-8{grid-column:span 8}.col-12{grid-column:1 / -1}
+    .hero-left{grid-column:1 / span 7}.hero-right{grid-column:8 / -1}
+    .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--soft);font-weight:800;margin-bottom:16px}
+    h1{margin:0;font-size:clamp(52px,7vw,112px);line-height:.92;letter-spacing:-.07em;font-weight:800;max-width:1100px}
+    .hero-lead{margin:22px 0 0;font-size:clamp(18px,1.8vw,25px);line-height:1.42;color:var(--muted);max-width:930px}
+    .hero-notes{margin-top:28px;display:flex;flex-wrap:wrap;gap:10px}
+    .pill{display:inline-flex;align-items:center;padding:10px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:13px;font-weight:700;color:#222}
+    .card,.mini,.hero-panel{background:rgba(255,255,255,.92);border:1px solid var(--line);box-shadow:var(--shadow)}
+    .hero-panel{border-radius:var(--r-xl);padding:28px}
+    .card{border-radius:var(--r-lg);padding:24px}
+    .mini{border-radius:20px;padding:16px}
+    .section-head{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;align-items:end;margin-bottom:24px}
+    .section-head h2{grid-column:1 / span 7;margin:0;font-size:clamp(36px,4vw,68px);line-height:.96;letter-spacing:-.055em}
+    .section-head p{grid-column:8 / -1;margin:0;color:var(--muted);font-size:16px;line-height:1.55;max-width:760px}
+    .kicker{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--soft);font-weight:800;margin-bottom:10px}
+    .stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:26px}
+    .stat{background:#fff;border:1px solid var(--line);border-radius:22px;padding:18px;min-height:136px}
+    .stat-value{font-size:clamp(30px,3vw,50px);font-weight:800;letter-spacing:-.06em;line-height:.95;margin-bottom:10px}
+    .stat-title{font-size:14px;font-weight:800;margin-bottom:6px}.stat-note{font-size:13px;color:var(--muted);line-height:1.5}
+    .list{display:grid;gap:12px}.list-item{display:grid;grid-template-columns:10px 1fr;gap:12px;align-items:start;font-size:15px;line-height:1.55}.dot{width:10px;height:10px;border-radius:999px;background:#111;margin-top:7px}
+    .segment-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+    .segment-card{background:#fff;border:1px solid var(--line);border-radius:28px;padding:24px;box-shadow:var(--shadow)}
+    .segment-no{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--soft);font-weight:800;margin-bottom:8px}
+    .segment-title{font-size:28px;line-height:1.03;letter-spacing:-.05em;font-weight:800;margin:0 0 8px}.segment-sub{color:var(--muted);font-size:15px;line-height:1.55;margin:0 0 18px}
+    .segment-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .segment-box{border:1px solid var(--line);border-radius:18px;padding:14px;background:var(--surface2)}
+    .segment-box h4{margin:0 0 10px;font-size:12px;letter-spacing:.1em;text-transform:uppercase}.segment-box ul{margin:0;padding-left:17px;color:var(--muted);font-size:14px;line-height:1.5}
+    .bars{display:grid;gap:14px}.bar-row{display:grid;grid-template-columns:230px 1fr 66px;gap:14px;align-items:center}.bar-label{font-size:14px;font-weight:700}
+    .bar-track{height:12px;border-radius:999px;background:rgba(17,17,17,.08);overflow:hidden;position:relative}.bar-fill{position:absolute;inset:0 auto 0 0;width:calc(var(--p) * 1%);background:#111;border-radius:inherit;transform-origin:left center;transform:scaleX(0);animation:growX 1s cubic-bezier(.2,.7,.15,1) forwards}.bar-num{font-size:13px;font-weight:800;color:var(--muted);text-align:right}
+    .tableish{display:grid;gap:12px}.rowish{display:grid;grid-template-columns:1.2fr .9fr .9fr .95fr;gap:12px;padding:15px;border:1px solid var(--line);border-radius:18px;background:#fff}.rowish.head{padding:0 4px;background:transparent;border:0;font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--soft);font-weight:800}.rowish strong{display:block;margin-bottom:4px}.rowish p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
+    .offer-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.offer-card{background:#111;color:#fff;border-radius:28px;padding:24px;min-height:220px;position:relative;overflow:hidden}.offer-card::before{content:"";position:absolute;right:-60px;bottom:-60px;width:180px;height:180px;border-radius:999px;background:radial-gradient(circle, rgba(255,255,255,.14), transparent 70%)}.offer-card h3{margin:0 0 10px;font-size:28px;line-height:1.02;letter-spacing:-.05em}.offer-card p{margin:0;color:rgba(255,255,255,.78);line-height:1.55;font-size:15px}
+    .dark-panel{background:linear-gradient(180deg,#111,#171717);color:#fff;border-radius:34px;padding:26px;border:1px solid rgba(255,255,255,.06);box-shadow:0 18px 44px rgba(0,0,0,.12)}
+    .dark-panel .muted{color:rgba(255,255,255,.7)}
+    .dark-table .rowish{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08)}.dark-table .rowish p,.dark-table .rowish strong{color:#fff}.dark-table .rowish.head{color:rgba(255,255,255,.55)}.dark-table .rowish p{opacity:.72}
+    .steps{display:grid;gap:14px}.step{display:grid;grid-template-columns:66px 1fr;gap:16px;padding:18px;border-radius:22px;border:1px solid var(--line);background:#fff}.step-no{width:54px;height:54px;border-radius:16px;background:#111;color:#fff;display:grid;place-items:center;font-size:23px;font-weight:800}.step h4{margin:0 0 8px;font-size:20px;letter-spacing:-.03em}.step p{margin:0;color:var(--muted);font-size:15px;line-height:1.55}
+    .contact-card{display:grid;grid-template-columns:1.3fr .9fr;gap:18px;align-items:stretch}.contact-box{background:#111;color:#fff;border-radius:28px;padding:28px;min-height:220px}.contact-box h3{margin:0 0 12px;font-size:36px;line-height:.98;letter-spacing:-.05em}.contact-box p{margin:0;color:rgba(255,255,255,.76);font-size:16px;line-height:1.55}.contact-lines{margin-top:22px;display:grid;gap:12px}.contact-line{display:flex;flex-wrap:wrap;gap:10px;font-size:18px;font-weight:700}.contact-line a{color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.28)}
+    .footer-note{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-top:18px;color:var(--muted);font-size:13px;padding-top:18px;border-top:1px solid var(--line)}
+    .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease, transform .7s cubic-bezier(.2,.65,.18,1)}.reveal.visible{opacity:1;transform:translateY(0)}
+    @keyframes growX{to{transform:scaleX(1)}}
+    @media (max-width:1280px){
+      .topbar-inner{grid-template-columns:1fr;gap:14px}.owner-link{justify-self:start}
+      .hero-left,.hero-right,.section-head h2,.section-head p,.col-3,.col-4,.col-5,.col-6,.col-7,.col-8{grid-column:1 / -1}
+      .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.offer-grid,.segment-grid,.contact-card{grid-template-columns:1fr}.rowish{grid-template-columns:1fr 1fr}.rowish.head{display:none}
+    }
+    @media (max-width:760px){
+      :root{--nav-h:122px}.container{padding:0 16px 90px}.topbar-inner{padding:14px 16px}.hero{min-height:auto;padding-top:24px}.grid-12,.section-head{gap:14px}.stat-grid,.segment-meta,.offer-grid{grid-template-columns:1fr}.bar-row{grid-template-columns:1fr;gap:8px}.rowish{grid-template-columns:1fr}.contact-card{grid-template-columns:1fr}.segment-title{font-size:24px}
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div>
+        <div class="brand-kicker">Ресторан «Персона» · Копейск</div>
+        <div class="brand-title">Анализ ЦА · конкурентов · трафика · офферов · точек роста</div>
+      </div>
+      <nav class="nav" id="topNav">
+        <a href="#overview">Обзор</a>
+        <a href="#segments">Сегменты</a>
+        <a href="#portrait">Портрет ЦА</a>
+        <a href="#competitors">Конкуренты</a>
+        <a href="#pricing">Цены</a>
+        <a href="#offers">Офферы</a>
+        <a href="#traffic">Трафик</a>
+        <a href="#business">Бизнес</a>
+        <a href="#contact">Контакт</a>
+      </nav>
+      <a class="owner-link" href="#contact">Связаться по проекту</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero section" id="overview">
+      <div class="grid-12">
+        <div class="hero-left reveal visible">
+          <div class="eyebrow">Клиентская версия</div>
+          <h1>Персона — анализ ЦА, конкурентов, трафика и точек роста</h1>
+          <p class="hero-lead">Строгая рабочая версия для собственника. Без служебных блоков, лишних лозунгов и декоративных выводов. Внутри: сегменты, ценовое сравнение, продуктовая матрица, каналы трафика, офферы и конкретные шаги по росту выручки.</p>
+          <div class="hero-notes">
+            <div class="pill">банкеты</div>
+            <div class="pill">свадьбы</div>
+            <div class="pill">корпоративы</div>
+            <div class="pill">бизнес-ланч</div>
+            <div class="pill">доставка</div>
+            <div class="pill">кейтеринг</div>
+            <div class="pill">сертификаты</div>
+            <div class="pill">бонусная система</div>
+          </div>
+          <div class="stat-grid">
+            <div class="stat reveal"><div class="stat-value">68%</div><div class="stat-title">Копейск — ядро спроса</div><div class="stat-note">Основная география. Челябинск и область — дополнительный спрос под поводы, родню и корпоративы.</div></div>
+            <div class="stat reveal"><div class="stat-value">55%</div><div class="stat-title">Сарафан и рекомендации</div><div class="stat-note">Главный источник банкетных клиентов. Его надо усиливать системой, а не оставлять случайным.</div></div>
+            <div class="stat reveal"><div class="stat-value">2</div><div class="stat-title">Флагмана по выручке</div><div class="stat-note">Банкеты под ключ и пятнично-субботние вечера с программой.</div></div>
+            <div class="stat reveal"><div class="stat-value">6</div><div class="stat-title">Доп. направлений роста</div><div class="stat-note">Доставка, ланчи, сертификаты, кейтеринг, лояльность, партнёрские продажи.</div></div>
+          </div>
+        </div>
+        <div class="hero-right reveal visible">
+          <div class="hero-panel">
+            <div class="kicker">Коротко</div>
+            <div class="list">
+              <div class="list-item"><div class="dot"></div><div><strong>Главный недобор денег — не в спросе, а в упаковке продуктов.</strong> Не все услуги ресторана собраны в отдельные предложения со своим оффером и своим каналом привлечения.</div></div>
+              <div class="list-item"><div class="dot"></div><div><strong>Карты и мессенджеры — первая линия продаж.</strong> Их надо качать как полноценную витрину: фото, меню, пакеты, ответы, быстрый контакт.</div></div>
+              <div class="list-item"><div class="dot"></div><div><strong>Нужно разделить деньги по направлениям.</strong> Банкет, вечер, ланч, доставка, кейтеринг, сертификаты, партнёрские мероприятия — это разные воронки и разные офферы.</div></div>
+              <div class="list-item"><div class="dot"></div><div><strong>Трафик надо брать не только из органики.</strong> Есть локальный спрос, партнёрки, Директ, карты, базы, геореклама и повторные продажи по базе.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="segments">
+      <div class="section-head reveal">
+        <h2>Сегменты ЦА</h2>
+        <p>Ключевые сегменты разложены сразу на экране. Сначала идут те, которые сильнее двигают выручку и спрос.</p>
+      </div>
+      <div class="segment-grid">
+        <article class="segment-card reveal">
+          <div class="segment-no">01</div>
+          <h3 class="segment-title">Семьи и пары · банкеты</h3>
+          <p class="segment-sub">Юбилеи, свадьбы, дни рождения, семейные поводы. Самый сильный сегмент по чеку, циклу выбора и вероятности брони.</p>
+          <div class="segment-meta">
+            <div class="segment-box"><h4>Что важно</h4><ul><li>Понятная цена за человека</li><li>Фотогеничный зал</li><li>Ведущий, DJ, программа</li><li>Отсутствие скрытых платежей</li></ul></div>
+            <div class="segment-box"><h4>Что мешает</h4><ul><li>Страх слабой кухни</li><li>Недоверие к сервису в день X</li><li>Сравнение с Челябинском</li><li>Непрозрачный пакет</li></ul></div>
+            <div class="segment-box"><h4>Каналы</h4><ul><li>Яндекс.Карты</li><li>2ГИС</li><li>WhatsApp</li><li>Сарафан</li></ul></div>
+            <div class="segment-box"><h4>Оффер</h4><ul><li>Банкет под ключ</li><li>2–3 пакета по формату</li><li>Просмотр зала в 1 клик</li><li>Цена от + что входит</li></ul></div>
+          </div>
+        </article>
+
+        <article class="segment-card reveal">
+          <div class="segment-no">02</div>
+          <h3 class="segment-title">Корпоративы и компании</h3>
+          <p class="segment-sub">HR, руководители, администраторы. Им нужен не красивый текст, а смета, вместимость, скорость ответа, документы и понятные условия.</p>
+          <div class="segment-meta">
+            <div class="segment-box"><h4>Что важно</h4><ul><li>Документы и безнал</li><li>Смета заранее</li><li>Понятный тайминг</li><li>Вместимость 30–80+</li></ul></div>
+            <div class="segment-box"><h4>Что мешает</h4><ul><li>Страх «опять колхоз»</li><li>Непонятный бюджет</li><li>Слабая программа</li><li>Нет кейсов по компаниям</li></ul></div>
+            <div class="segment-box"><h4>Каналы</h4><ul><li>2ГИС</li><li>Прямые звонки</li><li>Партнёрства</li><li>Коммерческие предложения</li></ul></div>
+            <div class="segment-box"><h4>Оффер</h4><ul><li>Корпоратив под ключ</li><li>Смета за 1 час</li><li>Пакеты по числу гостей</li><li>Отдельный менеджер</li></ul></div>
+          </div>
+        </article>
+
+        <article class="segment-card reveal">
+          <div class="segment-no">03</div>
+          <h3 class="segment-title">Молодёжь и молодые пары</h3>
+          <p class="segment-sub">Выпускные, свадьбы, дни рождения до 30. Ниже бюджет, выше роль фото, видео, музыки и общего визуального уровня.</p>
+          <div class="segment-meta">
+            <div class="segment-box"><h4>Что важно</h4><ul><li>Современная музыка</li><li>Видео и фото</li><li>Не скучный ведущий</li><li>Понятная сумма на компанию</li></ul></div>
+            <div class="segment-box"><h4>Что мешает</h4><ul><li>Страх устаревшего вайба</li><li>Сомнения по контингенту</li><li>Ограниченный бюджет</li><li>Мало актуального контента</li></ul></div>
+            <div class="segment-box"><h4>Каналы</h4><ul><li>VK</li><li>Reels / клипы</li><li>Рекомендации</li><li>Мессенджеры</li></ul></div>
+            <div class="segment-box"><h4>Оффер</h4><ul><li>Выпускной / свадьба</li><li>Фиксированный пакет</li><li>Ведущий + DJ</li><li>Фото- и видеофрендли формат</li></ul></div>
+          </div>
+        </article>
+
+        <article class="segment-card reveal">
+          <div class="segment-no">04</div>
+          <h3 class="segment-title">Пятница / суббота вечер</h3>
+          <p class="segment-sub">Пары и компании 25–55. Здесь выигрывает не просто еда, а программа, атмосфера, музыка и удобное бронирование.</p>
+          <div class="segment-meta">
+            <div class="segment-box"><h4>Что важно</h4><ul><li>Свободные столы</li><li>Живая программа</li><li>Современный плейлист</li><li>Возможность резерва</li></ul></div>
+            <div class="segment-box"><h4>Что мешает</h4><ul><li>Однообразные вечера</li><li>Слабый анонс событий</li><li>Страх «не тот контингент»</li><li>Непонятный средний чек</li></ul></div>
+            <div class="segment-box"><h4>Каналы</h4><ul><li>VK-афиша</li><li>Карты</li><li>Геореклама</li><li>Повторные гости</li></ul></div>
+            <div class="segment-box"><h4>Оффер</h4><ul><li>Стол на вечер</li><li>Программа + ужин</li><li>Резерв за 1 минуту</li><li>Анонс по дням недели</li></ul></div>
+          </div>
+        </article>
+
+        <article class="segment-card reveal">
+          <div class="segment-no">05</div>
+          <h3 class="segment-title">Бизнес-ланч</h3>
+          <p class="segment-sub">Офисы, госслужащие, сотрудники центра. Ниже чек, но выше повторяемость и роль скорости обслуживания.</p>
+          <div class="segment-meta">
+            <div class="segment-box"><h4>Что важно</h4><ul><li>Время подачи</li><li>Стабильный чек</li><li>Горячее блюдо</li><li>Меню дня</li></ul></div>
+            <div class="segment-box"><h4>Что мешает</h4><ul><li>Долгое ожидание</li><li>Однообразие меню</li><li>Непонятно, что входит</li><li>Слабый nearby-маркетинг</li></ul></div>
+            <div class="segment-box"><h4>Каналы</h4><ul><li>Карты</li><li>Локальные листовки</li><li>Офисы рядом</li><li>Меню в мессенджерах</li></ul></div>
+            <div class="segment-box"><h4>Оффер</h4><ul><li>Ланч за фиксированную цену</li><li>Готовность за 30 минут</li><li>Каждый 6-й обед бонусом</li><li>Корпоративная подписка</li></ul></div>
+          </div>
+        </article>
+
+        <article class="segment-card reveal">
+          <div class="segment-no">06</div>
+          <h3 class="segment-title">Доставка и навынос</h3>
+          <p class="segment-sub">Дополнительный денежный слой. Работает на будни, плохую погоду, праздники дома и знакомство с кухней до первого визита.</p>
+          <div class="segment-meta">
+            <div class="segment-box"><h4>Что важно</h4><ul><li>Понятное меню</li><li>Скорость доставки</li><li>Сборки на компанию</li><li>Повторный заказ</li></ul></div>
+            <div class="segment-box"><h4>Что мешает</h4><ul><li>Если нет отдельного меню</li><li>Слабая упаковка</li><li>Отсутствие акций на повтор</li><li>Неясный радиус и срок</li></ul></div>
+            <div class="segment-box"><h4>Каналы</h4><ul><li>Карты</li><li>Сайт / лендинг</li><li>VK</li><li>Партнёрские агрегаторы</li></ul></div>
+            <div class="segment-box"><h4>Оффер</h4><ul><li>Сеты и семейные наборы</li><li>Доставка по району</li><li>Бонус на второй заказ</li><li>Праздник дома</li></ul></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="portrait">
+      <div class="section-head reveal">
+        <h2>Общий портрет ЦА</h2>
+        <p>Основная аудитория — семейные и работающие люди, которые ценят понятный сервис, не любят неопределённость и хотят решить вопрос быстро.</p>
+      </div>
+      <div class="grid-12">
+        <div class="col-6 card reveal">
+          <div class="kicker">Базовый срез</div>
+          <div class="bars">
+            <div class="bar-row"><div class="bar-label">Женщины</div><div class="bar-track"><div class="bar-fill" style="--p:58"></div></div><div class="bar-num">58%</div></div>
+            <div class="bar-row"><div class="bar-label">Мужчины</div><div class="bar-track"><div class="bar-fill" style="--p:42"></div></div><div class="bar-num">42%</div></div>
+            <div class="bar-row"><div class="bar-label">Копейск</div><div class="bar-track"><div class="bar-fill" style="--p:68"></div></div><div class="bar-num">68%</div></div>
+            <div class="bar-row"><div class="bar-label">Челябинск</div><div class="bar-track"><div class="bar-fill" style="--p:22"></div></div><div class="bar-num">22%</div></div>
+            <div class="bar-row"><div class="bar-label">Область</div><div class="bar-track"><div class="bar-fill" style="--p:10"></div></div><div class="bar-num">10%</div></div>
+          </div>
+        </div>
+        <div class="col-6 card reveal">
+          <div class="kicker">Что повторяется у всех сегментов</div>
+          <div class="list">
+            <div class="list-item"><div class="dot"></div><div>Ищут ресторан через карты, рекомендации, отзывы и фотографии.</div></div>
+            <div class="list-item"><div class="dot"></div><div>Сначала оценивают не меню, а доверие: интерьер, отзывы, понятность условий, реакцию администратора.</div></div>
+            <div class="list-item"><div class="dot"></div><div>Не любят неясность по цене, доплатам, алкоголю, времени и условиям отмены.</div></div>
+            <div class="list-item"><div class="dot"></div><div>Лучше реагируют на конкретику: цена от, что включено, сколько гостей, как бронировать.</div></div>
+            <div class="list-item"><div class="dot"></div><div>Часто принимают решение в мессенджере, не хотят проходить длинную воронку.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="competitors">
+      <div class="section-head reveal">
+        <h2>Конкуренты</h2>
+        <p>Локальные игроки — это борьба за семейный вечер, банкет и спонтанный ужин. Челябинские рестораны — это ориентиры по упаковке, лояльности и подаче.</p>
+      </div>
+      <div class="grid-12">
+        <div class="col-12 card reveal">
+          <div class="kicker">Сравнение по сути</div>
+          <div class="tableish">
+            <div class="rowish head"><div>Игрок</div><div>Сильная сторона</div><div>Слабое место</div><div>Что делать Персоне</div></div>
+            <div class="rowish"><div><strong>Помидор · Копейск</strong><p>Семейный формат, детские сценарии, доставка, понятный everyday-спрос.</p></div><div><p>Удобен для обычного ужина, ланча, похода с детьми.</p></div><div><p>Не банкетный ресторан, слабее по статусу торжества и программе.</p></div><div><p>Не конкурировать за пиццу. Усиливать праздник, вечера, банкеты, сертификаты.</p></div></div>
+            <div class="rowish"><div><strong>Изба / 4 Сыра · Копейск</strong><p>Локальные точки внимания в городе.</p></div><div><p>Могут отбирать спонтанный ужин и часть локального доверия.</p></div><div><p>Слабее в цифровой упаковке, фото, системности лояльности.</p></div><div><p>Занять лидерскую позицию через сайт, отзывы, офферы и карту гостя.</p></div></div>
+            <div class="rowish"><div><strong>The Center / Родня / Хачапури · Челябинск</strong><p>Референсы по упаковке, акциям, бонусам, современному образу.</p></div><div><p>Сильнее по сайту, лояльности, афише, продуктовой подаче.</p></div><div><p>Часто выше цена и не всегда удобнее по географии для Копейска.</p></div><div><p>Брать механику, а не копировать стиль: карта гостя, пакеты, события, бонусы, welcome-предложения.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="pricing">
+      <div class="section-head reveal">
+        <h2>Ценовое сравнение</h2>
+        <p>Ниже не идеальная бухгалтерия по рынку, а практическая рамка: где Персона выглядит конкурентно, а где недодаёт ценность или упаковку.</p>
+      </div>
+      <div class="dark-panel reveal">
+        <div class="kicker">Сравнение по направлениям</div>
+        <div class="tableish dark-table">
+          <div class="rowish head"><div>Направление</div><div>Персона</div><div>Рынок / ориентир</div><div>Вывод</div></div>
+          <div class="rowish"><div><strong>Банкеты</strong><p>Ключевая выручка. Важно показывать стоимость от и наполнение пакета.</p></div><div><p>От 1200 ₽ / чел в анализе как сильный входной якорь.</p></div><div><p>По банкетам называлась в диапазоне 2500–3000 ₽ / чел; в Челябинске много площадок заметно выше.</p></div><div><p>Персона может продавать цену как преимущество, но только если добьёт упаковку и снимет страхи по качеству.</p></div></div>
+          <div class="rowish"><div><strong>Пятничный вечер</strong><p>Высокий чек за стол, но зависит от программы и загрузки.</p></div><div><p>Нужен понятный диапазон чека на человека и депозит на столы в пятницу/субботу.</p></div><div><p>В городе и Челябинске вечерние форматы часто выигрывают не ценой, а афишей и резервом.</p></div><div><p>Нужно продавать сценарий вечера: музыка, программа, ужин, бронирование.</p></div></div>
+          <div class="rowish"><div><strong>Бизнес-ланч</strong><p>Небольшой чек, высокий LTV.</p></div><div><p>550 ₽ в анализе — важная психологическая рамка.</p></div><div><p>Ланч в городе должен быть понятнее и быстрее, чем ужин в ресторане.</p></div><div><p>Нужны фиксированный состав, фото порций, бонус на частые визиты, подписка для офисов.</p></div></div>
+          <div class="rowish"><div><strong>Доставка</strong><p>Дополнительный денежный слой.</p></div><div><p>Сейчас скорее недоупакованное направление.</p></div><div><p>У сетевых и пиццерий выигрывает понятность меню, скорость и акции на повтор.</p></div><div><p>Нужно отдельное меню доставки, семейные наборы, бонус на второй заказ, гео-акции.</p></div></div>
+          <div class="rowish"><div><strong>Кейтеринг</strong><p>Средний и высокий чек, если делать как отдельный продукт.</p></div><div><p>Есть потенциал, но нужен кейс-портфель и смета.</p></div><div><p>На рынке берут за счёт удобства, логистики, сервировки и документов.</p></div><div><p>Нужно упаковать как самостоятельную услугу, а не побочный текстовый пункт.</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="offers">
+      <div class="section-head reveal">
+        <h2>Офферы и продуктовая матрица</h2>
+        <p>Ресторану нужны не общие фразы, а отдельные предложения под каждую денежную воронку. Ниже базовая матрица, которую можно запускать в сайт, карты, рассылки и рекламу.</p>
+      </div>
+      <div class="offer-grid reveal">
+        <article class="offer-card"><h3>Банкеты</h3><p>Юбилей, свадьба, день рождения, выпускной. Пакеты по гостям: цена от, что включено, алкоголь, декор, ведущий, DJ, условия брони и отмены.</p></article>
+        <article class="offer-card"><h3>Вечера</h3><p>Пятница / суббота: резерв стола, афиша, депозит, программа, средний чек, время начала, свободные места, быстрый контакт в WhatsApp.</p></article>
+        <article class="offer-card"><h3>Корпоративы</h3><p>Смета за 1 час, безнал, документы, вместимость, готовые пакеты 30 / 50 / 80 гостей, сценарии под Новый год, 8 марта, юбилей компании.</p></article>
+        <article class="offer-card"><h3>Бизнес-ланч</h3><p>Фиксированный чек, меню дня, фото, обещание по времени подачи, бонусы за частоту, пакеты для nearby-офисов и групповые абонементы.</p></article>
+        <article class="offer-card"><h3>Доставка</h3><p>Сеты на компанию, семейные ужины, праздничные наборы, бонус на повтор, бесплатная доставка от суммы, отдельное меню без перегруза.</p></article>
+        <article class="offer-card"><h3>Повторная выручка</h3><p>Карта гостя, сертификаты, бонусы на следующий банкет, спецпредложения по базе, детские дни, дегустации, вечеринки и партнёрские пакеты.</p></article>
+      </div>
+      <div class="grid-12" style="margin-top:18px;">
+        <div class="col-6 card reveal">
+          <div class="kicker">Бонусная система</div>
+          <div class="list">
+            <div class="list-item"><div class="dot"></div><div>Карта гостя с накоплением бонусов для обычных визитов и вечерних бронирований.</div></div>
+            <div class="list-item"><div class="dot"></div><div>Отдельная механика для банкетов: бонус или сертификат на следующий семейный повод.</div></div>
+            <div class="list-item"><div class="dot"></div><div>Ланч-механика: каждый 6-й / 7-й обед с бонусом, отдельная корпоративная карта.</div></div>
+            <div class="list-item"><div class="dot"></div><div>Доставка: промокод на второй заказ в течение 7–14 дней.</div></div>
+          </div>
+        </div>
+        <div class="col-6 card reveal">
+          <div class="kicker">Что ещё можно продавать</div>
+          <div class="list">
+            <div class="list-item"><div class="dot"></div><div>Подарочные сертификаты на ужин, банкетный депозит, семейный вечер.</div></div>
+            <div class="list-item"><div class="dot"></div><div>Партнёрские пакеты: декор, фотограф, видеограф, ведущий, торт.</div></div>
+            <div class="list-item"><div class="dot"></div><div>Выездной кейтеринг для компаний и частных домов.</div></div>
+            <div class="list-item"><div class="dot"></div><div>Сезонные меню и праздничные наборы под 14 февраля, 8 марта, Новый год, выпускные.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="traffic">
+      <div class="section-head reveal">
+        <h2>Трафик и каналы привлечения</h2>
+        <p>Ниже каналы не общим списком, а по логике: откуда брать спрос, что в него вести и какое действие нужно человеку на выходе.</p>
+      </div>
+      <div class="grid-12">
+        <div class="col-12 card reveal">
+          <div class="kicker">Канал → оффер → посадка → действие</div>
+          <div class="tableish">
+            <div class="rowish head"><div>Канал</div><div>Что продвигать</div><div>Куда вести</div><div>Главное действие</div></div>
+            <div class="rowish"><div><strong>Яндекс.Карты / 2ГИС</strong><p>Горячий локальный трафик. Люди уже ищут место.</p></div><div><p>Банкеты, ужин, ланч, резерв стола, доставка.</p></div><div><p>Карточка с фото залов, меню, пакетами и кнопкой WhatsApp.</p></div><div><p>Написать / позвонить / построить маршрут.</p></div></div>
+            <div class="rowish"><div><strong>Яндекс.Директ</strong><p>Запросный трафик под конкретный повод.</p></div><div><p>«Банкет Копейск», «юбилей Копейск», «корпоратив Копейск», «доставка еды Копейск».</p></div><div><p>Отдельные посадочные под банкет, корпоратив, доставку.</p></div><div><p>Заявка / WhatsApp / звонок.</p></div></div>
+            <div class="rowish"><div><strong>VK + короткие видео</strong><p>Тёплый и разогревающий трафик.</p></div><div><p>Вечера, выпускные, свадьбы, фото и атмосфера.</p></div><div><p>VK-лента, сайт, чат, форма резерва.</p></div><div><p>Резерв стола / запрос даты / подписка на анонсы.</p></div></div>
+            <div class="rowish"><div><strong>WhatsApp-база</strong><p>Самый недоиспользованный тёплый актив.</p></div><div><p>Повторные банкеты, ланчи, вечера, сертификаты, праздники.</p></div><div><p>Короткие персональные сообщения и рассылки по сегментам.</p></div><div><p>Повторный визит / запрос сметы / бронь.</p></div></div>
+            <div class="rowish"><div><strong>Партнёрская сеть</strong><p>Лиды через тех, кто уже работает с праздничной аудиторией.</p></div><div><p>Свадьбы, юбилеи, выпускные, кейтеринг, корпоративы.</p></div><div><p>Партнёрский пакет и отдельная страница / PDF.</p></div><div><p>Передача лида / просмотр зала / совместная сделка.</p></div></div>
+            <div class="rowish"><div><strong>Nearby-маркетинг</strong><p>Локальный трафик вокруг центра и офисов.</p></div><div><p>Бизнес-ланч, ужин после работы, доставка в офис.</p></div><div><p>Меню дня, QR-страница, листовка, геообъявления.</p></div><div><p>Приход на ланч / первый заказ / подписка на меню дня.</p></div></div>
+          </div>
+        </div>
+        <div class="col-6 card reveal">
+          <div class="kicker">Что запускать первым</div>
+          <div class="steps">
+            <div class="step"><div class="step-no">1</div><div><h4>Карты и отзывы</h4><p>Привести в порядок фото, пакеты, описание услуг, меню, ответы на негатив, кнопки связи. Это самый быстрый рычаг.</p></div></div>
+            <div class="step"><div class="step-no">2</div><div><h4>Посадочная под банкет</h4><p>Отдельный экран / страница под банкетный спрос: пакеты, число гостей, цена от, вопросы, контакты.</p></div></div>
+            <div class="step"><div class="step-no">3</div><div><h4>Директ по банкетным запросам</h4><p>Запуск на Копейск + Челябинск под события и поводы с быстрым входом в WhatsApp.</p></div></div>
+          </div>
+        </div>
+        <div class="col-6 card reveal">
+          <div class="kicker">Что запускать вторым</div>
+          <div class="steps">
+            <div class="step"><div class="step-no">4</div><div><h4>База и повторные продажи</h4><p>Собрать номера и даты поводов, запускать касания по календарю: ДР, юбилей, Новый год, корпоративный сезон.</p></div></div>
+            <div class="step"><div class="step-no">5</div><div><h4>Лояльность и сертификаты</h4><p>Карта гостя и подарочные сертификаты под вечер, семейный ужин, банкетный депозит.</p></div></div>
+            <div class="step"><div class="step-no">6</div><div><h4>Доставка и nearby-офисы</h4><p>Выделить отдельное меню и отдельный оффер. Не смешивать доставку с банкетным сценарием.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="business">
+      <div class="section-head reveal">
+        <h2>Бизнес и roadmap</h2>
+        <p>Главная задача — не просто «получать больше заявок», а разделить ресторан на понятные денежные продукты и дать каждому свой канал, свой оффер и свою математику.</p>
+      </div>
+      <div class="grid-12">
+        <div class="col-7 card reveal">
+          <div class="kicker">Что делать в первую очередь</div>
+          <div class="steps">
+            <div class="step"><div class="step-no">1</div><div><h4>Собрать продуктовую матрицу</h4><p>Банкет, корпоратив, вечер, ланч, доставка, кейтеринг, сертификаты, бонусная система. Для каждого: цена, оффер, канал, менеджер, KPI.</p></div></div>
+            <div class="step"><div class="step-no">2</div><div><h4>Добить ценовую прозрачность</h4><p>На сайте и в мессенджерах должны быть цены от, пакеты и понятный калькулятор ожиданий. Не прятать стоимость за звонком без причин.</p></div></div>
+            <div class="step"><div class="step-no">3</div><div><h4>Сделать отдельные посадки</h4><p>Одна общая страница не продаёт все сценарии одинаково. Нужны отдельные экраны под банкет, корпоратив, доставку и ланч.</p></div></div>
+            <div class="step"><div class="step-no">4</div><div><h4>Собрать систему повторной выручки</h4><p>Карта гостя, даты поводов, сертификаты, бонусы на следующий визит, повторный прогрев по базе.</p></div></div>
+            <div class="step"><div class="step-no">5</div><div><h4>Запустить трафик по ступеням</h4><p>Сначала карты + Директ по банкетам, потом база, потом nearby-ланчи и доставка, потом партнёрские каналы.</p></div></div>
+          </div>
+        </div>
+        <div class="col-5 card reveal">
+          <div class="kicker">30 / 90 / 180 дней</div>
+          <div class="list">
+            <div class="list-item"><div class="dot"></div><div><strong>30 дней:</strong> карты, отзывы, фото, банкетная посадочная, офферы, WhatsApp-маршрут.</div></div>
+            <div class="list-item"><div class="dot"></div><div><strong>90 дней:</strong> карта гостя, сертификаты, Директ, nearby-ланчи, база клиентов и календарь поводов.</div></div>
+            <div class="list-item"><div class="dot"></div><div><strong>180 дней:</strong> полноценная доставка, кейтеринг как продукт, партнёрская сеть, корпоративный канал, отчётность по каждому направлению.</div></div>
+          </div>
+          <div class="mini" style="margin-top:16px;">
+            <div class="kicker">Что важно не делать</div>
+            <div class="list">
+              <div class="list-item"><div class="dot"></div><div>Не пытаться одним общим текстом продать всё сразу.</div></div>
+              <div class="list-item"><div class="dot"></div><div>Не строить трафик только на сарафане и органике.</div></div>
+              <div class="list-item"><div class="dot"></div><div>Не демпинговать без усиления продукта и доверия.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="contact">
+      <div class="section-head reveal">
+        <h2>Контакт</h2>
+        <p>Если собственник решит переводить анализ в сайт, офферы, рекламу и продуктовую систему, ниже контакт для связи.</p>
+      </div>
+      <div class="contact-card reveal">
+        <div class="contact-box">
+          <h3>Связь по проекту</h3>
+          <p>Разбор, упаковка, сайт, офферы, трафик, система продаж и продуктовая логика для ресторана.</p>
+          <div class="contact-lines">
+            <div class="contact-line">Telegram: <a href="https://t.me/shershikoff">@shershikoff</a></div>
+            <div class="contact-line">Телефон: <a href="tel:+79123177969">+7 912 317 7969</a></div>
+          </div>
+        </div>
+        <div class="card" style="display:grid;align-content:center;">
+          <div class="kicker">Что можно сделать дальше</div>
+          <div class="list">
+            <div class="list-item"><div class="dot"></div><div>Перевести анализ в продающий сайт и отдельные посадки по направлениям.</div></div>
+            <div class="list-item"><div class="dot"></div><div>Собрать офферы, пакеты, бонусную систему и сценарии повторных продаж.</div></div>
+            <div class="list-item"><div class="dot"></div><div>Запустить трафик: карты, Директ, база, партнёрки, nearby-каналы.</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-note reveal">
+        <div>Файл собран как строгая клиентская версия.</div>
+        <div>Акцент: структура, деньги, трафик, ценовое сравнение, внедрение.</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const progress = document.getElementById('progress');
+    const navLinks = [...document.querySelectorAll('#topNav a')];
+    const sections = [...document.querySelectorAll('.section')];
+    const reveals = document.querySelectorAll('.reveal');
+
+    function updateProgress(){
+      const top = window.scrollY;
+      const height = document.documentElement.scrollHeight - window.innerHeight;
+      progress.style.width = (height > 0 ? (top / height) * 100 : 0) + '%';
+    }
+    function updateNav(){
+      const trigger = window.scrollY + window.innerHeight * 0.28;
+      let current = sections[0]?.id;
+      sections.forEach(section => { if(trigger >= section.offsetTop) current = section.id; });
+      navLinks.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + current));
+    }
+    window.addEventListener('scroll', () => { updateProgress(); updateNav(); }, {passive:true});
+    updateProgress(); updateNav();
+
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{ if(entry.isIntersecting) entry.target.classList.add('visible'); });
+    }, {threshold:.12});
+    reveals.forEach(el=>io.observe(el));
+  </script>
+  
+
+
+
+  <div style="position:fixed;bottom:24px;right:24px;z-index:999;">
+  <button onclick="savePDF()" style="
+    background:#111;
+    color:#fff;
+    border:none;
+    padding:14px 18px;
+    border-radius:999px;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 10px 30px rgba(0,0,0,.15);
+  ">
+    Скачать PDF
+  </button>
+</div>
+<script>
+  function savePDF(){
+  window.print();
+}
+</script>
+</body>
+</html>
